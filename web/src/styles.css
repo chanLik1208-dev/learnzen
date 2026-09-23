@@ -1,0 +1,208 @@
+@import 'tailwindcss';
+
+/*
+ * Elevation is expressed two different ways depending on the theme, because
+ * a shadow cast on a near-black background is invisible. In light mode height
+ * reads as a larger, softer, *fainter* shadow; in dark mode it reads as a
+ * brighter surface. Switching theme therefore swaps the mechanism, not just
+ * the palette — which is why every level defines both.
+ */
+:root {
+  color-scheme: light dark;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-hover: #fcfcfd;
+  --elevated: #ffffff;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  --text: #16181d;
+  --text-muted: #6b7280;
+  --text-subtle: #9ca3af;
+  --text-disabled: #b6bac1;
+
+  --primary: #2b6cf6;
+  --primary-soft: #eaf1fe;
+  --primary-text: #1d4ed8;
+  --success: #17a34a;
+  --success-soft: #e8f7ee;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --warning: #d97706;
+  --warning-soft: #fdf3e3;
+
+  /* Two layers: a tight contact shadow for thickness, a wide one for distance. */
+  --shadow-1: 0 1px 2px rgb(16 24 40 / 0.06);
+  --shadow-2: 0 2px 6px rgb(16 24 40 / 0.07), 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-3: 0 8px 20px rgb(16 24 40 / 0.07), 0 2px 6px rgb(16 24 40 / 0.05);
+  --shadow-4: 0 20px 48px rgb(16 24 40 / 0.1), 0 4px 12px rgb(16 24 40 / 0.05);
+  --rim: inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    --bg: #0e0e10;
+    --surface: #17171a;
+    --surface-hover: #1c1c20;
+    --elevated: #1f1f23;
+    --border: #2a2a30;
+    --border-strong: #3a3a42;
+
+    --text: #e8e8ea;
+    --text-muted: #9a9aa4;
+    --text-subtle: #74747e;
+    --text-disabled: #55555d;
+
+    /* Saturated brand colours fluoresce on dark; pull them back and lift. */
+    --primary: #5b8dfa;
+    --primary-soft: #182338;
+    --primary-text: #9ab8fd;
+    --success: #3fbb6c;
+    --success-soft: #14261b;
+    --danger: #f06a6a;
+    --danger-soft: #2c1719;
+    --warning: #e3a34a;
+    --warning-soft: #2a2015;
+
+    /* Shadows still anchor an element, but no longer carry the hierarchy. */
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 2px 8px rgb(0 0 0 / 0.5);
+    --shadow-3: 0 8px 24px rgb(0 0 0 / 0.55);
+    --shadow-4: 0 24px 56px rgb(0 0 0 / 0.6);
+    --rim: inset 0 1px 0 rgb(255 255 255 / 0.07);
+  }
+}
+
+[data-theme='dark'] {
+  --bg: #0e0e10;
+  --surface: #17171a;
+  --surface-hover: #1c1c20;
+  --elevated: #1f1f23;
+  --border: #2a2a30;
+  --border-strong: #3a3a42;
+  --text: #e8e8ea;
+  --text-muted: #9a9aa4;
+  --text-subtle: #74747e;
+  --text-disabled: #55555d;
+  --primary: #5b8dfa;
+  --primary-soft: #182338;
+  --primary-text: #9ab8fd;
+  --success: #3fbb6c;
+  --success-soft: #14261b;
+  --danger: #f06a6a;
+  --danger-soft: #2c1719;
+  --warning: #e3a34a;
+  --warning-soft: #2a2015;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 2px 8px rgb(0 0 0 / 0.5);
+  --shadow-3: 0 8px 24px rgb(0 0 0 / 0.55);
+  --shadow-4: 0 24px 56px rgb(0 0 0 / 0.6);
+  --rim: inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'PingFang HK', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* Honour the phone's safe areas so the bottom nav clears the home bar. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+* { box-sizing: border-box; }
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-2);
+    /* Brightness is a state signal, so it settles faster than any movement. */
+    transition: box-shadow 0.2s ease-out, background-color 0.14s ease-out,
+      border-color 0.14s ease-out;
+  }
+
+  .card-interactive:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-3);
+  }
+
+  .field {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    color: var(--text);
+    font-size: 0.95rem;
+    /* Recessed: the light comes from above, so the top edge is in shadow. */
+    box-shadow: inset 0 1px 2px rgb(16 24 40 / 0.06);
+    transition: border-color 0.14s ease-out, box-shadow 0.14s ease-out;
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: inset 0 1px 2px rgb(16 24 40 / 0.04), 0 0 0 3px var(--primary-soft);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.14s ease-out, border-color 0.14s ease-out,
+      box-shadow 0.14s ease-out, color 0.14s ease-out;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-1), var(--rim);
+  }
+  .btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-2), var(--rim); }
+
+  .btn-ghost {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-1);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface-hover);
+    box-shadow: var(--shadow-2);
+  }
+
+  /* Disabled gets its own colour rather than opacity, which would let the
+     background show through and drop the text below a readable contrast. */
+  .btn:disabled {
+    cursor: not-allowed;
+    background: var(--bg);
+    color: var(--text-disabled);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+}
+
+/* Anything that moves or scales a sizeable element must degrade to a fade. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

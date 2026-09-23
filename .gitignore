@@ -1,0 +1,19 @@
+node_modules/
+web/dist/
+.env
+
+# The whole data directory: it holds the question bank, every student's
+# answers, and data/.secret — the HMAC key that signs access tokens. Anyone
+# with that key can mint a token for any account, so it must never be
+# committed, not even to a private repository.
+data/
+
+# Screenshots are produced by scripts/shoot.mjs from live data, so they carry
+# real names and question text. Regenerate them rather than commit them.
+shots/
+
+# Console scripts that pull from one specific school platform. They only ever
+# touch the operator's own account, but a public repository is the wrong place
+# for tooling aimed at a named third party. Kept locally.
+scripts/export-from-*.js
+scripts/probe-*.js
