@@ -12,6 +12,7 @@ const loadingSessions = ref(true);
 /** Fetched rather than taken from the cached session: a role or class change
  *  made since sign-in should show here, not the state at login time. */
 const me = ref(null);
+const myReports = ref([]);
 const form = ref({ currentPassword: '', newPassword: '', confirm: '' });
 const busy = ref(false);
 const error = ref('');
@@ -30,13 +31,16 @@ const ready = computed(() => form.value.currentPassword
   && form.value.newPassword === form.value.confirm);
 
 onMounted(async () => {
-  const [m, s] = await Promise.allSettled([
+  const [m, s, r] = await Promise.allSettled([
     api.get('/api/auth/me'),
     api.get('/api/auth/sessions'),
+    api.get('/api/me/reports'),
   ]);
   if (m.status === 'fulfilled') me.value = m.value.user;
   if (s.status === 'fulfilled') sessions.value = s.value.sessions;
   else error.value = s.reason.message;
+  // Staff have no reports of their own; a 403 here is ordinary, not an error.
+  if (r.status === 'fulfilled') myReports.value = r.value.reports;
   loadingSessions.value = false;
 });
 
@@ -69,6 +73,12 @@ async function changePassword() {
 
 const fmt = (ms) => new Date(ms).toLocaleString('zh-HK',
   { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+const REPORT_STATUS = {
+  OPEN: { label: '等老師處理', tone: 'var(--warning)', soft: 'var(--warning-soft)' },
+  ACCEPTED: { label: '已受理', tone: 'var(--success)', soft: 'var(--success-soft)' },
+  REJECTED: { label: '已駁回', tone: 'var(--text-muted)', soft: 'var(--bg)' },
+};
 </script>
 
 <template>
@@ -170,4 +180,28 @@ const fmt = (ms) => new Date(ms).toLocaleString('zh-HK',
       </div>
     </section>
   </div>
+
+  <!-- What came of the questions they flagged. Raising an objection and never
+       hearing back is worse than not offering the option at all. -->
+  <section v-if="myReports.length" class="mt-4">
+    <h2 class="mb-2.5 text-base font-semibold">我回報過的題目</h2>
+    <div class="card divide-y p-0" style="border-color: var(--border)">
+      <div v-for="r in myReports" :key="r.id" class="px-4 py-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                :style="{ background: REPORT_STATUS[r.status].soft, color: REPORT_STATUS[r.status].tone }">
+            {{ REPORT_STATUS[r.status].label }}
+          </span>
+          <span class="text-[12px]" style="color: var(--text-subtle)">
+            題目 #{{ r.questionId }} · {{ fmt(r.createdAt) }}
+          </span>
+        </div>
+        <p class="mt-1 line-clamp-1 text-[13px]">{{ r.preview }}</p>
+        <p v-if="r.resolution" class="mt-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px]"
+           style="background: var(--bg); color: var(--text-muted)">
+          老師回覆：{{ r.resolution }}
+        </p>
+      </div>
+    </div>
+  </section>
 </template>

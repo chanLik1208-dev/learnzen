@@ -242,6 +242,30 @@ CREATE TABLE IF NOT EXISTS submission_answers (
   PRIMARY KEY (submission_id, question_id)
 );
 
+-- A student saying a question is wrong: the answer key looks incorrect, the
+-- wording is ambiguous, an image is missing. Worth recording because a bad
+-- question quietly costs marks for everyone who meets it, and because the
+-- person best placed to notice is the one who just got it wrong.
+CREATE TABLE IF NOT EXISTS question_reports (
+  id          INTEGER PRIMARY KEY,
+  question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason      TEXT NOT NULL CHECK (reason IN ('WRONG_ANSWER','AMBIGUOUS','TYPO','MISSING_FIGURE','OTHER')),
+  detail      TEXT,
+  status      TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','ACCEPTED','REJECTED')),
+  resolution  TEXT,
+  resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at  INTEGER NOT NULL,
+  resolved_at INTEGER,
+  -- One open report per student per question: raising the same objection
+  -- twice is noise, and the second one says nothing the first did not.
+  UNIQUE (question_id, user_id, status),
+  -- A resolved report always says who resolved it and when; an open one
+  -- never pretends to have been looked at.
+  CHECK ((status = 'OPEN') = (resolved_at IS NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_reports_open ON question_reports(status, created_at DESC);
+
 -- ------------------------------------------------------------------- auth --
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (

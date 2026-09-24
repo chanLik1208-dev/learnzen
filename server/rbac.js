@@ -27,11 +27,13 @@ export const PERMISSIONS = Object.freeze({
     // Reading a practice question is what practice.run already means; a
     // second permission for it would only be one more thing to keep in sync.
     'topic.list',
+    // Flagging a question they believe is wrong.
+    'question.report',
   ],
   TEACHER: [
     'self.read', 'self.password.change', 'self.sessions.manage',
     'topic.list', 'question.bank.read', 'question.bank.write',
-    'assignment.manage', 'assignment.grade.read',
+    'assignment.manage', 'assignment.grade.read', 'question.report.review',
     'class.read', 'student.profile.read', 'analytics.read',
     // Enrol students into a class they teach, and reset a student's password.
     // Deliberately not `user.manage`: creating staff accounts, changing
@@ -56,7 +58,7 @@ export const PERMISSIONS = Object.freeze({
     'self.read', 'self.password.change', 'self.sessions.manage',
     'topic.list', 'topic.manage',
     'question.bank.read', 'question.bank.write',
-    'assignment.manage', 'assignment.grade.read',
+    'assignment.manage', 'assignment.grade.read', 'question.report.review',
     'class.read', 'class.manage', 'student.profile.read', 'analytics.read',
     'student.enroll', 'user.manage', 'audit.read',
     'ratelimit.read', 'ratelimit.clear', 'ratelimit.relax',

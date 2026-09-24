@@ -6,8 +6,10 @@ const props = defineProps({
   question: { type: Object, required: true },
   /** Null until answered; then { chosen, isCorrect, correctLabels, explanation }. */
   result: { type: Object, default: null },
+  /** Offer the "this question looks wrong" link once it has been answered. */
+  reportable: { type: Boolean, default: false },
 });
-const emit = defineEmits(['answer']);
+const emit = defineEmits(['answer', 'report']);
 
 const picked = ref([]);
 watch(() => props.question.id, () => { picked.value = []; });
@@ -22,6 +24,27 @@ const chosenSet = computed(() => new Set(
 const DIFFICULTY = {
   EASY: '容易', EASY_MEDIUM: '偏易', MEDIUM: '中等', MEDIUM_HARD: '偏難', HARD: '困難',
 };
+
+const REASONS = [
+  ['WRONG_ANSWER', '正確答案好像錯了'],
+  ['AMBIGUOUS', '題目或選項有歧義'],
+  ['TYPO', '有錯別字或排版問題'],
+  ['MISSING_FIGURE', '缺了附圖'],
+  ['OTHER', '其他'],
+];
+
+const reporting = ref(false);
+const reportForm = ref({ reason: 'WRONG_ANSWER', detail: '' });
+const reported = ref(false);
+
+watch(() => props.question.id, () => { reporting.value = false; reported.value = false; });
+
+function sendReport() {
+  emit('report', { ...reportForm.value });
+  reporting.value = false;
+  reported.value = true;
+  reportForm.value = { reason: 'WRONG_ANSWER', detail: '' };
+}
 
 function toggle(label) {
   if (answered.value) return;
@@ -123,6 +146,44 @@ function styleFor(label) {
         確認作答
       </button>
     </div>
+
+    <!-- Raising an objection is offered only after answering: before that a
+         student has no basis for one, and the option would just be a way to
+         see what the answer is. -->
+    <div v-if="reportable && answered" class="mt-4 flex justify-end">
+      <button
+        v-if="!reporting && !reported"
+        class="text-[12px] hover:underline"
+        style="color: var(--text-subtle)"
+        @click="reporting = true"
+      >這題怪怪的？回報給老師</button>
+      <span v-else-if="reported" class="text-[12px]" style="color: var(--success)">
+        已回報，老師處理後你會在「我的」看到結果
+      </span>
+    </div>
+
+    <AnimatePresence>
+      <motion.div
+        v-if="reporting" key="report"
+        :initial="{ opacity: 0, height: 0 }"
+        :animate="{ opacity: 1, height: 'auto', transition: { duration: 0.24, ease: 'easeOut' } }"
+        :exit="{ opacity: 0, height: 0, transition: { duration: 0.14, ease: 'easeIn' } }"
+        class="overflow-hidden"
+      >
+        <div class="mt-3 rounded-xl p-4" style="background: var(--bg)">
+          <div class="mb-2 text-xs font-semibold" style="color: var(--text-muted)">回報問題</div>
+          <select v-model="reportForm.reason" class="field mb-2">
+            <option v-for="[value, label] in REASONS" :key="value" :value="value">{{ label }}</option>
+          </select>
+          <textarea v-model="reportForm.detail" class="field" rows="2"
+                    placeholder="補充說明（選填），例如「(3) 的敘述在 HTTPS 下不成立」"></textarea>
+          <div class="mt-2 flex justify-end gap-2">
+            <button class="btn btn-ghost !py-1.5 !text-[13px]" @click="reporting = false">取消</button>
+            <button class="btn btn-primary !py-1.5 !text-[13px]" @click="sendReport">送出</button>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
 
     <!-- Height animates from 0 so the page below is pushed rather than
          jumping; the explanation is long, and a jump loses the reader. -->

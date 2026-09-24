@@ -62,6 +62,15 @@ async function answer(labels) {
   }
 }
 
+/** A student flagging the question they just answered. */
+async function sendReport(payload) {
+  try {
+    await api.post(`/api/questions/${current.value.id}/report`, payload);
+  } catch (err) {
+    error.value = err.message;
+  }
+}
+
 function next() {
   if (isLast.value) return finish();
   index.value += 1;
@@ -129,7 +138,10 @@ async function finish() {
         :animate="{ opacity: 1, x: 0, transition: { type: 'spring', visualDuration: 0.3, bounce: 0 } }"
         :exit="{ opacity: 0, x: -16, transition: { duration: 0.15, ease: 'easeIn' } }"
       >
-        <QuestionCard :question="current" :result="currentResult" @answer="answer" />
+        <QuestionCard
+          :question="current" :result="currentResult" reportable
+          @answer="answer" @report="sendReport"
+        />
       </motion.div>
     </AnimatePresence>
 

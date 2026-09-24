@@ -12,6 +12,7 @@ import './routes/teacher.js';
 import './routes/ratelimit.js';
 import './routes/accounts.js';
 import './routes/progress.js';
+import './routes/reports.js';
 
 export { routeTable };
 
