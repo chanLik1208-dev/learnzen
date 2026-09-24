@@ -13,6 +13,7 @@ import './routes/ratelimit.js';
 import './routes/accounts.js';
 import './routes/progress.js';
 import './routes/reports.js';
+import './routes/live.js';
 
 export { routeTable };
 

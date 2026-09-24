@@ -112,6 +112,13 @@ function send(res, status, payload, cookies = [], extra = {}) {
 export const ok = (data) => ({ success: true, data });
 
 /**
+ * Returned by a handler that has taken over the response — a stream that
+ * stays open rather than a body that ends. The router then leaves the socket
+ * alone instead of writing a JSON envelope into the middle of it.
+ */
+export const STREAM = Symbol('handler owns the response');
+
+/**
  * Whether the Origin header names this very server.
  *
  * A page served from the same origin it is calling cannot be a cross-site
@@ -205,6 +212,7 @@ export function createHandler({ allowedOrigins = [], rateLimit = true } = {}) {
       }
 
       const data = await found.route.handler(ctx);
+      if (data === STREAM) return undefined;
 
       // A successful sign-in costs nothing: someone who mistypes twice and
       // then gets it right should not be closer to a lockout than before.

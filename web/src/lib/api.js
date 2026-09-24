@@ -21,6 +21,11 @@ export const sessionExpired = ref(false);
 export const setToken = (token) => { accessToken = token; sessionExpired.value = false; };
 export const clearToken = () => { accessToken = null; };
 export const hasToken = () => accessToken != null;
+/**
+ * Only for the event-stream client, which must put the token in a header
+ * itself because EventSource cannot. Nothing else should read it.
+ */
+export const currentToken = () => accessToken;
 
 export class ApiError extends Error {
   constructor(status, code, message) {

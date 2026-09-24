@@ -29,12 +29,14 @@ export const PERMISSIONS = Object.freeze({
     'topic.list',
     // Flagging a question they believe is wrong.
     'question.report',
+    // Joining and answering a live quiz the teacher is running.
+    'live.play',
   ],
   TEACHER: [
     'self.read', 'self.password.change', 'self.sessions.manage',
     'topic.list', 'question.bank.read', 'question.bank.write',
     'assignment.manage', 'assignment.grade.read', 'question.report.review',
-    'class.read', 'student.profile.read', 'analytics.read',
+    'live.host', 'class.read', 'student.profile.read', 'analytics.read',
     // Enrol students into a class they teach, and reset a student's password.
     // Deliberately not `user.manage`: creating staff accounts, changing
     // anyone's role, and disabling accounts stay with an administrator, so a
@@ -59,7 +61,7 @@ export const PERMISSIONS = Object.freeze({
     'topic.list', 'topic.manage',
     'question.bank.read', 'question.bank.write',
     'assignment.manage', 'assignment.grade.read', 'question.report.review',
-    'class.read', 'class.manage', 'student.profile.read', 'analytics.read',
+    'live.host', 'class.read', 'class.manage', 'student.profile.read', 'analytics.read',
     'student.enroll', 'user.manage', 'audit.read',
     'ratelimit.read', 'ratelimit.clear', 'ratelimit.relax',
     // Unbounded adjustment, including tightening an address to zero.

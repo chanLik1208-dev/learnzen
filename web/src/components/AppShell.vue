@@ -12,6 +12,7 @@ const studentNav = [
   { name: 'assignments', label: '作業', icon: 'M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM9 8h6M9 12h6M9 16h3' },
   { name: 'practice', label: '練習', icon: 'M12 5v16M20 19a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2l-4 0a5 5 0 0 0-4 2 5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4a5 5 0 0 1 4 2 5 5 0 0 1 4-2Z' },
   { name: 'wrongbook', label: '錯題本', icon: 'M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z' },
+  { name: 'live-play', label: '即時測驗', icon: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z' },
   { name: 'progress', label: '學習檔案', icon: 'M3 3v16a2 2 0 0 0 2 2h16M7 16l4-5 3 3 5-7' },
   { name: 'account', label: '我的', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z' },
 ];
@@ -20,6 +21,7 @@ const teacherNav = [
   { name: 'question-bank', label: '題庫', icon: 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20' },
   { name: 'create-paper', label: '組卷', icon: 'M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM9 8h6M9 12h6M9 16h3' },
   { name: 'scores', label: '成績', icon: 'M3 3v16a2 2 0 0 0 2 2h16M7 16l4-5 3 3 5-7' },
+  { name: 'live-host', label: '即時測驗', icon: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z' },
   { name: 'reports', label: '爭議審核', icon: 'M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z' },
   { name: 'fill-drafts', label: '補齊題目', icon: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z' },
   { name: 'accounts', label: '帳號', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },

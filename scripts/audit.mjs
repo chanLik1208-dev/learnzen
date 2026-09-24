@@ -68,6 +68,10 @@ const called = new Set();
 for (const m of webSrc.matchAll(/api\.(get|post|put|patch|del)\(\s*[`'"]([^`'"]+)/g)) {
   called.add(`${METHOD_OF[m[1]]} ${normalise(m[2])}`);
 }
+// The event-stream client, which opens a GET of its own.
+for (const m of webSrc.matchAll(/openStream\(\s*[`'"](\/api\/[^`'"]+)/g)) {
+  called.add(`GET ${normalise(m[1])}`);
+}
 // The client's own low-level sender, which the refresh path uses directly.
 for (const m of webSrc.matchAll(/send\(\s*['"](\w+)['"]\s*,\s*['"](\/api\/[^'"]+)/g)) {
   called.add(`${m[1].toUpperCase()} ${normalise(m[2])}`);

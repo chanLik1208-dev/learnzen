@@ -266,6 +266,62 @@ CREATE TABLE IF NOT EXISTS question_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_reports_open ON question_reports(status, created_at DESC);
 
+-- ------------------------------------------------------------- live quiz --
+
+-- A quiz run in front of a class: the teacher advances the questions, everyone
+-- answers at once, and the scoreboard updates as they go. The state lives in
+-- the database rather than in the server's memory so a restart mid-lesson
+-- resumes instead of losing the room.
+CREATE TABLE IF NOT EXISTS live_sessions (
+  id          INTEGER PRIMARY KEY,
+  -- Short code the class types in. Unique only among live rooms.
+  code        TEXT NOT NULL UNIQUE,
+  title       TEXT NOT NULL,
+  host_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  class_id    INTEGER REFERENCES classes(id) ON DELETE SET NULL,
+  status      TEXT NOT NULL DEFAULT 'LOBBY'
+              CHECK (status IN ('LOBBY','QUESTION','REVEAL','ENDED')),
+  -- Which question is on screen; null in the lobby and once ended.
+  current_seq INTEGER,
+  -- When the current question went up, so the server decides the deadline
+  -- rather than trusting a countdown in anyone's browser.
+  asked_at    INTEGER,
+  seconds     INTEGER NOT NULL DEFAULT 30 CHECK (seconds > 0),
+  created_at  INTEGER NOT NULL,
+  ended_at    INTEGER,
+  CHECK ((status = 'ENDED') = (ended_at IS NOT NULL)),
+  CHECK ((status IN ('QUESTION','REVEAL')) = (current_seq IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_live_code ON live_sessions(code, status);
+
+CREATE TABLE IF NOT EXISTS live_session_questions (
+  session_id  INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+  question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+  seq         INTEGER NOT NULL,
+  PRIMARY KEY (session_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS live_participants (
+  session_id INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  joined_at  INTEGER NOT NULL,
+  PRIMARY KEY (session_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS live_answers (
+  session_id  INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+  question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  chosen      TEXT NOT NULL,
+  is_correct  INTEGER NOT NULL,
+  -- Milliseconds from the question going up, which is what speed scoring uses.
+  elapsed_ms  INTEGER NOT NULL,
+  points      REAL NOT NULL DEFAULT 0,
+  answered_at INTEGER NOT NULL,
+  -- One answer per person per question: a live round is a single shot.
+  PRIMARY KEY (session_id, question_id, user_id)
+);
+
 -- ------------------------------------------------------------------- auth --
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
