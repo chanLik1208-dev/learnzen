@@ -6,10 +6,49 @@ HKDSE ICT 練習平台：課題練習、錯題本、作業與測驗、教師出�
 這是把我原本在用的一套學習平台重寫一遍的結果。下面「設計決定」那一節逐條說明
 每個決定要解決什麼問題——那些是實際踩過的坑，不是假想的。
 
+## 畫面
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/07-answered.png" alt="課題練習：答題回饋"></td>
+<td width="50%"><img src="docs/screenshots/14-scores.png" alt="教師端：成績與分析"></td>
+</tr>
+<tr>
+<td><b>課題練習</b>——答對的選項轉綠、選錯的轉紅、其餘用停用色壓掉，詳解隨後展開。作答前伺服器不會送出任何答案鍵。</td>
+<td><b>成績</b>——每位學生都列出來，包括沒開始作答的。沒交就是 <code>—</code> 不是 0：「沒交」和「交了考零分」是兩回事。</td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/11-fill-drafts.png" alt="補齊題目選項"></td>
+<td><img src="docs/screenshots/18-throttle.png" alt="連線節流"></td>
+</tr>
+<tr>
+<td><b>補齊題目</b>——缺選項的題目是 <code>DRAFT</code>，永遠不會派給學生。詳解若寫了「故選 C」會預先選好並附上依據，讓人一眼能否決它。</td>
+<td><b>連線節流</b>——整校共用一個對外位址，全班同時登入會像同一台機器在猜密碼。教師可以解除或臨時放寬，管理員才能收緊，每一次都寫進稽核紀錄。</td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/10-dark-practice.png" alt="深色主題"></td>
+<td><img src="docs/screenshots/08-mobile-dashboard.png" alt="手機版"></td>
+</tr>
+<tr>
+<td><b>深色主題</b>——層級改用「越高的表面越亮」表達，因為黑影投在近黑背景上看不見。切換換的是機制，不只是色票。</td>
+<td><b>手機版</b>——底部導覽、安全區域留白。</td>
+</tr>
+</table>
+
+截圖由 `scripts/shoot.mjs` 從 `scripts/demo.mjs` 產生的示範資料拍攝，題目是為此寫的，
+人物是虛構的。要自己重現：
+
+```bash
+node scripts/demo.mjs                                  # data/demo.db
+LB_DB=data/demo.db PORT=8788 LB_TRUST_PROXY=1 npm start &
+node scripts/shoot.mjs http://localhost:8788 --out docs/screenshots
+```
+
 ## 跑起來
 
 ```bash
 node scripts/seed.mjs                       # 課題、班別、三個帳號
+node scripts/demo.mjs                       # 或：連同示範題目與作答記錄
 node scripts/import-questions.mjs <匯出檔…>  # 灌題庫，可重複執行
 cd web && npm install && npm run build      # 前端
 npm start                                   # http://localhost:8787

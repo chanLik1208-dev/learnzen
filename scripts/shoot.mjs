@@ -104,6 +104,27 @@ const evaluate = async (expression) => (await call('Runtime.evaluate', {
   expression, awaitPromise: true, returnByValue: true,
 })).result?.value;
 
+/**
+ * Sign in, and do nothing if a session is already live. Every navigation is a
+ * full page load, so the in-memory access token is rebuilt from the refresh
+ * cookie each time; this is the safety net for when that does not happen.
+ */
+async function signIn(username, password) {
+  const needed = await evaluate(`document.querySelectorAll('input[type=password]').length > 0`);
+  if (!needed) return false;
+  await evaluate(`
+    (() => {
+      const [u, p] = document.querySelectorAll('input');
+      const set = (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+      set(u, ${JSON.stringify(username)}); set(p, ${JSON.stringify(password)});
+      document.querySelector('form').requestSubmit();
+      return true;
+    })()
+  `);
+  await sleep(1800);
+  return true;
+}
+
 async function shoot(name) {
   const { data } = await call('Page.captureScreenshot', { format: 'png' });
   const file = join(outDir, `${name}.png`);
@@ -126,7 +147,7 @@ await evaluate(`
       el.value = v;
       el.dispatchEvent(new Event('input', { bubbles: true }));
     };
-    set(u, 's231003');
+    set(u, 'student');
     set(p, 'student-1234');
     document.querySelector('form').requestSubmit();
     return true;
@@ -170,6 +191,28 @@ await evaluate(`
 `);
 await sleep(1600);
 await shoot('07-answered');
+
+// Still signed in as the student: an administrator lands on the teacher
+// overview at "/", so shooting the phone layout after the role switch would
+// capture the same page twice.
+console.log('手機版 390×844');
+await go('/', 1200);
+await signIn('student', 'student-1234');
+await setViewport(390, 844, true);
+for (const [path, name] of [['/', '08-mobile-dashboard'], ['/practice', '09-mobile-practice']]) {
+  await go(path, 1400);
+  await shoot(name);
+}
+
+console.log('深色主題');
+await setViewport(1280, 900);
+await call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
+await go('/practice', 1500);
+await shoot('10-dark-practice');
+
+
+await setViewport(1280, 900);
+await call('Emulation.setEmulatedMedia', { features: [] });
 
 console.log('補題介面（教師登入）');
 // Log out first: /login redirects to the dashboard while a session is live,
@@ -225,14 +268,17 @@ await evaluate(`
 `);
 await sleep(2000);
 
-// Only now, with the session established, burn the login budget so the
-// throttle screen has a blocked source to show. Doing this first would
-// throttle the sign-in above — which is how this was discovered.
+// Give the throttle screen a blocked source to show. The attempts carry a
+// forwarded address (documentation range), so they land in that address's
+// bucket rather than this script's — otherwise the demo data would throttle
+// the very sign-ins the rest of the run depends on, which is how this was
+// found. The server must be started with LB_TRUST_PROXY=1 for it to count.
 await evaluate(`
   (async () => {
     for (let i = 0; i < 25; i++) {
       await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.45' },
         body: JSON.stringify({ username: 'nobody', password: 'x' }),
       });
     }
@@ -250,19 +296,6 @@ for (const [path, name] of [
   await go(path, 1800);
   await shoot(name);
 }
-
-console.log('手機版 390×844');
-await setViewport(390, 844, true);
-for (const [path, name] of [['/', '08-mobile-dashboard'], ['/practice', '09-mobile-practice']]) {
-  await go(path, 1400);
-  await shoot(name);
-}
-
-console.log('深色主題');
-await setViewport(1280, 900);
-await call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
-await go('/practice', 1500);
-await shoot('10-dark-practice');
 
 cdp.close();
 chrome.kill();
