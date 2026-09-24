@@ -88,16 +88,10 @@ route('GET', '/api/assignments', 'assignment.self.list', (ctx) => {
   };
 });
 
-route('GET', '/api/assignments/:id', 'assignment.self.list', (ctx) => {
-  const a = loadAssignmentFor(ctx.user, ctx.params.id, 'attempt');
-  const submission = gradedSubmission(a, ctx.user.id);
-  return {
-    assignment: serializeAssignment(withMaxScore(a), submission),
-    questionCount: get(
-      'SELECT COUNT(*) AS n FROM assignment_questions WHERE assignment_id = ?', a.id,
-    ).n,
-  };
-});
+// There is deliberately no GET /api/assignments/:id. The list already returns
+// every field a detail view would, so a second endpoint would be one more
+// place for the shape to drift — which is exactly the failure this file is
+// organised around. Add it when something actually needs it.
 
 route('POST', '/api/assignments/:id/start', 'assignment.self.attempt', (ctx) => {
   const at = now();

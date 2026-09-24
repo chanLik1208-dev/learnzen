@@ -182,6 +182,68 @@ route('POST', '/api/teacher/questions', 'question.bank.write', (ctx) => {
 });
 
 /**
+ * Edit a question's text and metadata. The options and the answer key are not
+ * touched here — they go through the options endpoint, which is the only
+ * place that can move a question from DRAFT to ACTIVE, so an edit can never
+ * make an unanswerable question servable by accident.
+ */
+route('PATCH', '/api/teacher/questions/:id', 'question.bank.write', (ctx) => {
+  const q = get('SELECT * FROM questions WHERE id = ?', Number(ctx.params.id));
+  if (!q) throw notFound('找不到題目');
+
+  const b = ctx.body ?? {};
+  const changes = {};
+  if (b.contentZh !== undefined) {
+    const content = String(b.contentZh).trim();
+    if (!content) throw badRequest('題幹不可空白');
+    changes.content_zh = content;
+  }
+  for (const [field, column] of [
+    ['contentEn', 'content_en'], ['explanationZh', 'explanation_zh'],
+    ['explanationEn', 'explanation_en'], ['source', 'source'], ['examYear', 'exam_year'],
+  ]) {
+    if (b[field] !== undefined) changes[column] = b[field] === null ? null : String(b[field]).trim() || null;
+  }
+  if (b.topicId !== undefined) {
+    const topicId = b.topicId == null ? null : Number(b.topicId);
+    if (topicId != null && !get('SELECT 1 AS ok FROM topics WHERE id = ?', topicId)) {
+      throw badRequest('找不到課題', 'BAD_TOPIC');
+    }
+    changes.topic_id = topicId;
+  }
+  if (b.difficulty !== undefined) {
+    const levels = ['EASY', 'EASY_MEDIUM', 'MEDIUM', 'MEDIUM_HARD', 'HARD'];
+    if (b.difficulty != null && !levels.includes(b.difficulty)) {
+      throw badRequest('不支援的難度', 'BAD_DIFFICULTY');
+    }
+    changes.difficulty = b.difficulty ?? null;
+  }
+  if (b.status !== undefined) {
+    if (!['ACTIVE', 'DRAFT', 'RETIRED'].includes(b.status)) throw badRequest('不支援的狀態', 'BAD_STATUS');
+    // Going ACTIVE means "students may be given this", so it needs a key.
+    if (b.status === 'ACTIVE' && !get(
+      'SELECT 1 AS ok FROM question_options WHERE question_id = ? AND is_correct = 1', q.id,
+    )) {
+      throw badRequest('這題還沒有正確答案，不能啟用', 'NO_ANSWER_KEY');
+    }
+    changes.status = b.status;
+  }
+  if (Object.keys(changes).length === 0) throw badRequest('沒有要變更的欄位');
+
+  const t = now();
+  const sets = [...Object.keys(changes).map((k) => `${k} = ?`), 'updated_at = ?'];
+  run(`UPDATE questions SET ${sets.join(', ')} WHERE id = ?`, ...Object.values(changes), t, q.id);
+  audit({ actorId: ctx.user.id, action: 'question.update', target: `question:${q.id}`, ip: ctx.ip, detail: changes });
+
+  return {
+    question: {
+      ...serializeQuestion(get('SELECT * FROM questions WHERE id = ?', q.id), { withAnswer: true }),
+      status: get('SELECT status FROM questions WHERE id = ?', q.id).status,
+    },
+  };
+});
+
+/**
  * Questions that cannot be served because they have no options or no answer
  * key. The bulk import leaves hundreds of these: stems and explanations came
  * through, the option text did not. They are listed here so they can be

@@ -24,7 +24,9 @@ export const PERMISSIONS = Object.freeze({
     'self.read', 'self.password.change', 'self.sessions.manage',
     'practice.run', 'wrongbook.read',
     'assignment.self.list', 'assignment.self.attempt', 'assignment.self.review',
-    'topic.list', 'question.practice.read',
+    // Reading a practice question is what practice.run already means; a
+    // second permission for it would only be one more thing to keep in sync.
+    'topic.list',
   ],
   TEACHER: [
     'self.read', 'self.password.change', 'self.sessions.manage',
