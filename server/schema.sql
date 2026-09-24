@@ -266,6 +266,26 @@ CREATE TABLE IF NOT EXISTS question_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_reports_open ON question_reports(status, created_at DESC);
 
+-- Generated teaching reports. Kept because generating one costs money and
+-- takes time: a teacher opening the page should see what was written last
+-- week, not pay to regenerate it. The exact figures the report was written
+-- from are stored alongside, so a claim in the text can be checked against
+-- what the model was actually given.
+CREATE TABLE IF NOT EXISTS ai_reports (
+  id           INTEGER PRIMARY KEY,
+  class_id     INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  subject_id   INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  content      TEXT NOT NULL,
+  -- The pseudonymised figures that went to the model, as JSON.
+  input_facts  TEXT NOT NULL,
+  model        TEXT NOT NULL,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  generated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_reports_class ON ai_reports(class_id, created_at DESC);
+
 -- ------------------------------------------------------------- live quiz --
 
 -- A quiz run in front of a class: the teacher advances the questions, everyone

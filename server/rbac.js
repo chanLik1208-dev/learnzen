@@ -37,6 +37,9 @@ export const PERMISSIONS = Object.freeze({
     'topic.list', 'question.bank.read', 'question.bank.write',
     'assignment.manage', 'assignment.grade.read', 'question.report.review',
     'live.host', 'class.read', 'student.profile.read', 'analytics.read',
+    // Reading a generated report is free; generating one costs money and
+    // sends data to a third party, so it is a separate decision.
+    'ai.report.read', 'ai.report.generate',
     // Enrol students into a class they teach, and reset a student's password.
     // Deliberately not `user.manage`: creating staff accounts, changing
     // anyone's role, and disabling accounts stay with an administrator, so a
@@ -62,6 +65,7 @@ export const PERMISSIONS = Object.freeze({
     'question.bank.read', 'question.bank.write',
     'assignment.manage', 'assignment.grade.read', 'question.report.review',
     'live.host', 'class.read', 'class.manage', 'student.profile.read', 'analytics.read',
+    'ai.report.read', 'ai.report.generate',
     'student.enroll', 'user.manage', 'audit.read',
     'ratelimit.read', 'ratelimit.clear', 'ratelimit.relax',
     // Unbounded adjustment, including tightening an address to zero.

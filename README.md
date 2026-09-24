@@ -59,7 +59,7 @@ npm start                                   # http://localhost:8787
 預設帳號：`student / student-1234`、`teacher / teacher-1234`、`admin / admin-1234`。
 
 ```bash
-npm test            # 177 個測試
+npm test            # 299 個測試
 LB_ROUTES=1 npm start   # 啟動時印出完整路由與權限對照表
 ```
 
@@ -141,6 +141,23 @@ CHECK ((status = 'SUBMITTED') = (score IS NOT NULL))
 
 新課題預設關閉、學生點進去才被告知「此課題已被教師關閉」是很糟的預設。這裡沒有明確關過就是開的，而且教師端分得出「預設開」和「老師真的設過」。
 
+### AI 報告只拿到代號
+
+班級報告由 DeepSeek（或任何 OpenAI 相容端點）產生。送出的是課題正確率、作答題數、
+最常錯的題目這類數字——**學生一律以「學生1、學生2」出現，真實姓名不離開這台伺服器**，
+報告回來後才在本地對映回名字。一份給第三方的評量分析沒有任何理由需要知道誰是誰，
+而姓名一旦送出就收不回來。`assertNoNames()` 是最後一道防線：送出前再檢查一次，
+內容裡還有真名就拒絕發送。
+
+每份報告連同「當時送出的數據」一起存起來，所以文字裡的任何一句話都可以回頭對照，
+不必憑信。產生報告要花錢也要花時間，所以有額度限制、結果保存、不重複產生。
+
+```bash
+LB_AI_KEY=sk-...  npm start          # 沒設就是關閉，介面會說明原因
+LB_AI_BASE_URL=https://api.deepseek.com   # 預設值
+LB_AI_MODEL=deepseek-chat                 # 預設值
+```
+
 ## 題庫
 
 倉庫**不含題庫**。`scripts/import-questions.mjs` 吃任意數量的 JSON 檔，用題號合併，
@@ -161,16 +178,20 @@ node scripts/import-questions.mjs a.json b.json
 
 ```
 server/
-  schema.sql     17 張表，矛盾狀態用 CHECK 擋死
+  schema.sql     24 張表，矛盾狀態用 CHECK 擋死
   db.js          node:sqlite 封裝與交易
   scoring.js     唯一的評分與錯題本入口
   auth.js        scrypt、access token、輪替式 refresh
   rbac.js        權限目錄與歸屬驗證
   http.js        路由器（沒宣告權限就註冊不了）＋ 節流入口
   ratelimit.js   來源位址節流，取代帳號鎖定
+  live.js        即時測驗的房間與 SSE 廣播
+  ai.js          OpenAI 相容客戶端（預設 DeepSeek）
+  report-facts.js  送給模型的數字，學生已化名
   serialize.js   出牆的資料形狀，答案鍵要明確要求才給
-  routes/        auth / practice / assignments / teacher
+  routes/        auth / practice / assignments / teacher / accounts /
+                 progress / reports / live / ai-reports / ratelimit
 web/             Vue 3 + Vite + Tailwind 4 + motion-v
 scripts/         seed、匯入、匯出
-test/            177 個測試
+test/            299 個測試
 ```

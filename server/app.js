@@ -14,6 +14,7 @@ import './routes/accounts.js';
 import './routes/progress.js';
 import './routes/reports.js';
 import './routes/live.js';
+import './routes/ai-reports.js';
 
 export { routeTable };
 
