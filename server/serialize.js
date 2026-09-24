@@ -3,7 +3,21 @@
  * answer key to a question is `serializeQuestion` with `withAnswer: true`, and
  * every caller has to pass it explicitly — there is no default that leaks.
  */
+import { get } from './db.js';
 import { optionsFor } from './scoring.js';
+
+/**
+ * Total marks on a paper, from its questions.
+ *
+ * Computed here when the caller did not supply it, because relying on every
+ * call site to remember produced exactly the inconsistency this module exists
+ * to prevent: the same field came back as a number from one endpoint and null
+ * from another.
+ */
+const maxScoreOf = (assignmentId) => get(
+  'SELECT COALESCE(SUM(points), 0) AS total FROM assignment_questions WHERE assignment_id = ?',
+  assignmentId,
+).total;
 
 export function serializeQuestion(q, { withAnswer = false, lang = 'zh' } = {}) {
   const rows = optionsFor(q.id);
@@ -79,7 +93,7 @@ export const serializeAssignment = (a, submission = null) => ({
   reveal: a.reveal,
   revealAt: a.reveal_at ?? null,
   shuffle: a.shuffle === 1,
-  maxScore: a.max_score ?? null,
+  maxScore: a.max_score ?? maxScoreOf(a.id),
   submission: submission ? serializeSubmission(submission) : null,
 });
 

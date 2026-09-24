@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { motion, AnimatePresence, stagger } from 'motion-v';
+import { motion, AnimatePresence } from 'motion-v';
 import { api } from '../lib/api.js';
 
 const router = useRouter();

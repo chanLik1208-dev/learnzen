@@ -329,9 +329,44 @@ route('GET', '/api/teacher/assignments', 'assignment.manage', (ctx) => {
 route('POST', '/api/teacher/assignments', 'assignment.manage', (ctx) => {
   const b = ctx.body ?? {};
   const classId = assertTeachesClass(ctx.user, b.classId);
-  const questionIds = Array.isArray(b.questionIds) ? b.questionIds.map(Number) : [];
-  if (!b.title) throw badRequest('請輸入標題');
+
+  const title = String(b.title ?? '').trim();
+  if (!title) throw badRequest('請輸入標題');
+
+  // De-duplicated: assignment_questions is keyed on (assignment, question), so
+  // a repeated id would otherwise fail at the database with a 500 rather than
+  // telling the teacher what was wrong.
+  const questionIds = [...new Set((Array.isArray(b.questionIds) ? b.questionIds : []).map(Number))]
+    .filter(Number.isInteger);
   if (questionIds.length === 0) throw badRequest('請至少選一題', 'NO_QUESTIONS');
+
+  const points = b.pointsPerQuestion === undefined ? 1 : Number(b.pointsPerQuestion);
+  if (!Number.isFinite(points) || points <= 0) throw badRequest('每題分數必須大於 0', 'BAD_POINTS');
+
+  const openAt = b.openAt == null ? null : Number(b.openAt);
+  const dueAt = b.dueAt == null ? null : Number(b.dueAt);
+  if (openAt != null && dueAt != null && openAt > dueAt) {
+    throw badRequest('開放時間不能晚於截止時間', 'WINDOW_INVERTED');
+  }
+
+  const timeLimit = b.timeLimitSeconds == null ? null : Number(b.timeLimitSeconds);
+  if (timeLimit != null && (!Number.isFinite(timeLimit) || timeLimit <= 0)) {
+    throw badRequest('限時必須大於 0', 'BAD_TIME_LIMIT');
+  }
+
+  // The schema refuses a reveal rule whose timestamp is missing. Checking it
+  // here turns that from an opaque database failure into an answerable message.
+  const reveal = b.reveal ?? 'AFTER_SUBMIT';
+  if (!['NEVER', 'AFTER_SUBMIT', 'AFTER_DUE', 'AT_TIME'].includes(reveal)) {
+    throw badRequest('不支援的答案公開方式', 'BAD_REVEAL');
+  }
+  if (reveal === 'AFTER_DUE' && dueAt == null) {
+    throw badRequest('選「截止後公開答案」就必須設截止時間', 'REVEAL_NEEDS_DUE');
+  }
+  const revealAt = b.revealAt == null ? null : Number(b.revealAt);
+  if (reveal === 'AT_TIME' && revealAt == null) {
+    throw badRequest('選「指定時間公開答案」就必須設那個時間', 'REVEAL_NEEDS_TIME');
+  }
 
   // Every question must be gradeable before the paper can exist, so a student
   // can never open a paper containing a question that cannot be marked.
@@ -352,17 +387,18 @@ route('POST', '/api/teacher/assignments', 'assignment.manage', (ctx) => {
          (code, title, subject_id, class_id, created_by, kind, open_at, due_at, time_limit_s,
           shuffle, allow_late, max_attempts, score_strategy, reveal, reveal_at, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      b.code ?? `A-${t.toString(36).toUpperCase()}`, b.title, Number(b.subjectId ?? 1), classId,
+      String(b.code ?? '').trim() || `A-${t.toString(36).toUpperCase()}`,
+      title, Number(b.subjectId ?? 1), classId,
       ctx.user.id, b.kind === 'TEST' ? 'TEST' : 'HOMEWORK',
-      b.openAt ?? null, b.dueAt ?? null, b.timeLimitSeconds ?? null,
+      openAt, dueAt, timeLimit,
       b.shuffle ? 1 : 0, b.allowLate ? 1 : 0, maxAttempts, strategy,
-      b.reveal ?? 'AFTER_SUBMIT', b.revealAt ?? null, 'DRAFT', t, t,
+      reveal, revealAt, 'DRAFT', t, t,
     );
     const id = Number(r.lastInsertRowid);
 
     questionIds.forEach((qid, i) => run(
       'INSERT INTO assignment_questions (assignment_id, question_id, seq, points) VALUES (?, ?, ?, ?)',
-      id, qid, i + 1, Number(b.pointsPerQuestion ?? 1),
+      id, qid, i + 1, points,
     ));
 
     audit({ actorId: ctx.user.id, action: 'assignment.create', target: `assignment:${id}`, ip: ctx.ip });
@@ -393,9 +429,16 @@ route('GET', '/api/teacher/assignments/:id/scores', 'assignment.grade.read', (ct
     // One row per enrolled student, including those who never started, so the
     // table shows who is missing instead of silently omitting them.
     rows: students.map((s) => {
+      // The attempt the paper's scoring rule says counts — not simply the
+      // newest one, which would make BEST and FIRST meaningless.
+      const order = {
+        BEST: 'score DESC, attempt_no DESC',
+        FIRST: 'attempt_no ASC',
+        LAST: 'attempt_no DESC',
+      }[a.score_strategy] ?? 'attempt_no DESC';
       const sub = get(
         `SELECT * FROM submissions WHERE assignment_id = ? AND user_id = ?
-          ORDER BY attempt_no DESC LIMIT 1`,
+          ORDER BY (status = 'IN_PROGRESS') DESC, ${order} LIMIT 1`,
         a.id, s.id,
       );
       return {

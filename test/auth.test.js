@@ -1,7 +1,7 @@
 import { test, beforeEach, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshDb, makeUser } from './helpers.js';
-import { run, get, now } from '../server/db.js';
+import { run, now } from '../server/db.js';
 import {
   login, AuthError, issueAccessToken, verifyAccessToken, issueRefreshToken,
   rotateRefreshToken, revokeFamily, changePassword, hashPassword, verifyPassword,

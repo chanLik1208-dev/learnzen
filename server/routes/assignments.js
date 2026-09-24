@@ -12,12 +12,48 @@ const maxScoreOf = (assignmentId) => get(
 
 const withMaxScore = (a) => ({ ...a, max_score: maxScoreOf(a.id) });
 
-/** The attempt a student is currently on, or their last one. */
+/**
+ * The attempt a student is currently on, or their most recent one. This is
+ * what "resume" and "how many attempts have been used" mean — it is not
+ * necessarily the attempt that counts towards the grade.
+ */
 const latestSubmission = (assignmentId, userId) => get(
   `SELECT * FROM submissions WHERE assignment_id = ? AND user_id = ?
     ORDER BY attempt_no DESC LIMIT 1`,
   assignmentId, userId,
 );
+
+/**
+ * The attempt that counts, chosen by the paper's scoring rule.
+ *
+ * Keeping this separate from `latestSubmission` is the whole point: with more
+ * than one attempt allowed, "which one do I resume" and "which one is my mark"
+ * are different questions, and answering both with the newest row makes BEST
+ * and FIRST silently behave as LAST — a stored setting that does nothing.
+ *
+ * While an attempt is still in progress there is no mark yet, so that row is
+ * returned as-is; the choice only applies among submitted ones.
+ */
+function gradedSubmission(assignment, userId) {
+  const inProgress = get(
+    `SELECT * FROM submissions WHERE assignment_id = ? AND user_id = ? AND status = 'IN_PROGRESS'
+      ORDER BY attempt_no DESC LIMIT 1`,
+    assignment.id, userId,
+  );
+  if (inProgress) return inProgress;
+
+  const order = {
+    BEST: 'score DESC, attempt_no DESC',
+    FIRST: 'attempt_no ASC',
+    LAST: 'attempt_no DESC',
+  }[assignment.score_strategy] ?? 'attempt_no DESC';
+
+  return get(
+    `SELECT * FROM submissions WHERE assignment_id = ? AND user_id = ? AND status = 'SUBMITTED'
+      ORDER BY ${order} LIMIT 1`,
+    assignment.id, userId,
+  );
+}
 
 /**
  * The moment a paper stops accepting answers for this attempt: the earlier of
@@ -47,14 +83,14 @@ route('GET', '/api/assignments', 'assignment.self.list', (ctx) => {
   return {
     assignments: rows.map((a) => serializeAssignment(
       withMaxScore(a),
-      latestSubmission(a.id, ctx.user.id),
+      gradedSubmission(a, ctx.user.id),
     )),
   };
 });
 
 route('GET', '/api/assignments/:id', 'assignment.self.list', (ctx) => {
   const a = loadAssignmentFor(ctx.user, ctx.params.id, 'attempt');
-  const submission = latestSubmission(a.id, ctx.user.id);
+  const submission = gradedSubmission(a, ctx.user.id);
   return {
     assignment: serializeAssignment(withMaxScore(a), submission),
     questionCount: get(
@@ -309,7 +345,7 @@ function resultFor(assignment, submission, user, at) {
 route('GET', '/api/assignments/:id/review', 'assignment.self.review', (ctx) => {
   const at = now();
   const a = loadAssignmentFor(ctx.user, ctx.params.id, 'attempt', at);
-  const submission = latestSubmission(a.id, ctx.user.id);
+  const submission = gradedSubmission(a, ctx.user.id);
   if (!submission || submission.status !== 'SUBMITTED') throw notFound('尚未有可檢視的作答記錄');
   return resultFor(a, submission, ctx.user, at);
 });
