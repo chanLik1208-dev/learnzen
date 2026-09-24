@@ -16,6 +16,7 @@ const routes = [
   { path: '/teacher', name: 'teacher', component: () => import('./views/TeacherView.vue'), meta: { roles: ['TEACHER', 'ADMIN'] } },
   // Everyone has an account page; the guard only needs them signed in.
   { path: '/account', name: 'account', component: () => import('./views/AccountView.vue') },
+  { path: '/staff/accounts', name: 'accounts', component: () => import('./views/AccountsView.vue'), meta: { roles: ['TEACHER', 'ADMIN'] } },
   { path: '/staff/throttle', name: 'throttle', component: () => import('./views/ThrottleView.vue'), meta: { roles: ['TEACHER', 'ADMIN'] } },
   { path: '/teacher/students', name: 'class-students', component: () => import('./views/ClassStudentsView.vue'), meta: { roles: ['TEACHER', 'ADMIN'] } },
   { path: '/admin', name: 'admin', component: () => import('./views/AdminView.vue'), meta: { roles: ['ADMIN'] } },

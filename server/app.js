@@ -10,6 +10,7 @@ import './routes/practice.js';
 import './routes/assignments.js';
 import './routes/teacher.js';
 import './routes/ratelimit.js';
+import './routes/accounts.js';
 
 export { routeTable };
 

@@ -31,6 +31,11 @@ export const PERMISSIONS = Object.freeze({
     'topic.list', 'question.bank.read', 'question.bank.write',
     'assignment.manage', 'assignment.grade.read',
     'class.read', 'student.profile.read', 'analytics.read',
+    // Enrol students into a class they teach, and reset a student's password.
+    // Deliberately not `user.manage`: creating staff accounts, changing
+    // anyone's role, and disabling accounts stay with an administrator, so a
+    // teacher account cannot be used to manufacture one with more power.
+    'student.enroll',
     // Throttling, split by how much damage each action can do:
     //   read  — see who is currently being throttled;
     //   clear — lift one throttle, which the limit immediately re-applies;
@@ -51,7 +56,7 @@ export const PERMISSIONS = Object.freeze({
     'question.bank.read', 'question.bank.write',
     'assignment.manage', 'assignment.grade.read',
     'class.read', 'class.manage', 'student.profile.read', 'analytics.read',
-    'user.manage', 'audit.read',
+    'student.enroll', 'user.manage', 'audit.read',
     'ratelimit.read', 'ratelimit.clear', 'ratelimit.relax',
     // Unbounded adjustment, including tightening an address to zero.
     'ratelimit.override',

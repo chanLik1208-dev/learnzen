@@ -19,6 +19,7 @@ const teacherNav = [
   { name: 'create-paper', label: '組卷', icon: 'M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM9 8h6M9 12h6M9 16h3' },
   { name: 'scores', label: '成績', icon: 'M3 3v16a2 2 0 0 0 2 2h16M7 16l4-5 3 3 5-7' },
   { name: 'fill-drafts', label: '補齊題目', icon: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z' },
+  { name: 'accounts', label: '帳號', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
   { name: 'class-students', label: '學生', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z' },
   { name: 'topic-toggle', label: '課題開關', icon: 'M16 3H8a5 5 0 0 0 0 10h8a5 5 0 0 0 0-10ZM16 8a3 3 0 1 1 0 .01' },
   { name: 'throttle', label: '連線節流', icon: 'M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9' },
